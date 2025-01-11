@@ -1,64 +1,41 @@
-// Function to click the button
-function clickButton() {
-    // Get the button element by its class name
-    const button = document.querySelector('.m-9e117634');
-
-    // Check if the button element exists
-    if (button) {
-        // Programmatically trigger a click event on the button
-        button.click();
-    }
-}
-
-// Call the function to click the button initially
-clickButton();
-
-// Call the function to click the button every 2 second (2000 milliseconds)
-setInterval(clickButton, 2000);
-
-
-// Function to download all images within the specified area
-function downloadImages() {
+// Function to download images without repeating downloads
+function optimizedDownloadImages() {
   // Retrieve processed URLs from local storage or initialize an empty array
   let processedUrls = JSON.parse(localStorage.getItem('processedUrls')) || [];
-  
-  // Select the container div (assuming it's a container of images)
-  const container = document.querySelector('.m-4451eb3a'); // Adjust the selector to target the container
-  
+
+  // Select the container where images are located
+  const container = document.querySelector('.m-4451eb3a'); // Adjust the selector based on your HTML
+
+  if (!container) {
+    console.error('Container not found!');
+    return;
+  }
+
   // Select all img elements within the container
   const images = container.querySelectorAll('img');
-  
-  // Iterate over each image and initiate the download
+
   images.forEach(image => {
     const imageUrl = image.src;
-    
-    // Check if the URL has already been processed
+
+    // Skip download if the URL is already processed
     if (!processedUrls.includes(imageUrl)) {
       const filename = imageUrl.substring(imageUrl.lastIndexOf('/') + 1); // Extract filename from URL
-      
-      // Fetch the image data
+
+      // Fetch the image data and trigger the download
       fetch(imageUrl)
         .then(response => response.blob())
         .then(blob => {
-          // Create a temporary anchor element to trigger the download
           const link = document.createElement('a');
           link.href = URL.createObjectURL(blob);
           link.download = filename;
           link.style.display = 'none';
-          
-          // Append the anchor element to the document body
+
           document.body.appendChild(link);
-          
-          // Trigger the download
           link.click();
-          
-          // Clean up by removing the anchor element
           document.body.removeChild(link);
-          
+
           // Add the URL to the list of processed URLs
           processedUrls.push(imageUrl);
-          
-          // Save the updated list of processed URLs to local storage
           localStorage.setItem('processedUrls', JSON.stringify(processedUrls));
         })
         .catch(error => console.error('Error downloading image:', error));
@@ -66,8 +43,20 @@ function downloadImages() {
   });
 }
 
-// Call the function initially
-downloadImages();
+// Function to observe the container for new images
+defineObserver();
+function defineObserver() {
+  const container = document.querySelector('.m-4451eb3a'); // Adjust the selector based on your HTML
 
-// Call the function every 1 second (1000 milliseconds)
-setInterval(downloadImages, 1000);
+  if (!container) {
+    console.error('Container not found for observer!');
+    return;
+  }
+
+  const observer = new MutationObserver(() => optimizedDownloadImages());
+
+  observer.observe(container, { childList: true, subtree: true });
+}
+
+// Run the download function once initially
+optimizedDownloadImages();
